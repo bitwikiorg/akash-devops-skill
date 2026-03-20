@@ -1,0 +1,57 @@
+version: "2.0"
+
+services:
+  ai:
+    image: ollama/ollama:latest
+    expose:
+      - port: 11434
+        as: 80
+        to:
+          - global: true
+        http_options:
+          max_body_size: 104857600
+    env:
+      - OLLAMA_KEEP_ALIVE=24h
+    params:
+      storage:
+        - name: models
+          mount: /root/.ollama
+
+profiles:
+  compute:
+    gpu:
+      resources:
+        cpu:
+          units: 4
+        memory:
+          size: 16Gi
+        storage:
+          - name: models
+            size: 100Gi
+            attributes:
+              persistent: true
+              class: beta3
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+                - model: rtx4090
+                - model: a100
+                - model: rtx3090
+                ram: 16Gi
+
+  placement:
+    akash:
+      attributes:
+        region: us-west
+      pricing:
+        gpu:
+          denom: uakt
+          amount: 500
+
+deployment:
+  ai:
+    akash:
+      profile: gpu
+      count: 1

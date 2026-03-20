@@ -1,0 +1,36 @@
+version: "2.0"
+
+services:
+  app:
+    image: nginx:alpine
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true
+    env:
+      - TZ=UTC
+
+profiles:
+  compute:
+    standard:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          - size: 1Gi
+
+  placement:
+    akash:
+      pricing:
+        standard:
+          denom: uakt
+          amount: 100
+
+deployment:
+  app:
+    akash:
+      profile: standard
+      count: 1

@@ -1,0 +1,73 @@
+version: "2.0"
+
+services:
+  db:
+    image: postgres:15-alpine
+    env:
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=appuser
+      - POSTGRES_DB=appdb
+    expose:
+      - port: 5432
+        to:
+          - service: app
+    params:
+      storage:
+        - name: db-data
+          mount: /var/lib/postgresql/data
+
+  app:
+    image: nginx:alpine
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true
+    env:
+      - DATABASE_URL=postgres://appuser:changeme@db:5432/appdb
+    depends-on:
+      - db
+
+profiles:
+  compute:
+    db:
+      resources:
+        cpu:
+          units: 1
+        memory:
+          size: 1Gi
+        storage:
+          - name: db-data
+            size: 10Gi
+            attributes:
+              persistent: true
+              class: beta3
+
+    app:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          - size: 1Gi
+
+  placement:
+    akash:
+      pricing:
+        db:
+          denom: uakt
+          amount: 200
+        app:
+          denom: uakt
+          amount: 100
+
+deployment:
+  db:
+    akash:
+      profile: db
+      count: 1
+  app:
+    akash:
+      profile: app
+      count: 1
